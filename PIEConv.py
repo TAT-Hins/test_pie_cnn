@@ -6,7 +6,7 @@ from Conv import *
 from Pool import *
 
 
-def PIEConv(W1, W5, Wo, X, D):
+def PIEConv(W1, W5, Wo, X, D, labels_sort, filter_num):
     alpha = 0.01
     beta = 0.95
 
@@ -14,10 +14,12 @@ def PIEConv(W1, W5, Wo, X, D):
     momentum5 = np.zeros_like(W5)
     momentumo = np.zeros_like(Wo)
 
-    N = len(D) # Labels's amount
+    # Labels's amount
+    N = len(D)
 
     step_size = 100
-    blist = np.arange(0, N, step_size) # 0,100,200,...,N
+    # 0,100,200,...,N
+    blist = np.arange(0, N, step_size)
 
     for batch in range(len(blist)):
         dW1 = np.zeros_like(W1)
@@ -26,9 +28,11 @@ def PIEConv(W1, W5, Wo, X, D):
 
         begin = blist[batch]
 
-        for k in range(begin, begin + step_size): # k within step_size
+        # k within step_size
+        for k in range(begin, min(begin + step_size, N)):
             # Forward pass = inference
-            x = X[k, :, :] # Images[k]
+            # Images[k]
+            x = X[k, :, :]
             y1 = Conv(x, W1)
             y2 = ReLU(y1)
             y3 = Pool(y2)
@@ -39,7 +43,7 @@ def PIEConv(W1, W5, Wo, X, D):
             y = Softmax(v)
 
             # one-hot encoding
-            d = np.zeros((68, 1)) # 68: 分类总数量
+            d = np.zeros((labels_sort, 1)) # 68: 分类总数量
             d[D[k][0]][0] = 1
 
             # Backpropagation
@@ -55,13 +59,13 @@ def PIEConv(W1, W5, Wo, X, D):
 
             e2 = np.zeros_like(y2)  # pooling
             W3 = np.ones_like(y2) / (2 * 2)
-            for c in range(20):
+            for c in range(filter_num):
                 e2[:, :, c] = np.kron(e3[:, :, c], np.ones((2, 2))) * W3[:, :, c]
 
             delta2 = (y2 > 0) * e2
 
             delta1_x = np.zeros_like(W1)
-            for c in range(20):
+            for c in range(filter_num):
                 delta1_x[:, :, c] = signal.convolve2d(x[:, :], np.rot90(delta2[:, :, c], 2), 'valid')
 
             dW1 = dW1 + delta1_x

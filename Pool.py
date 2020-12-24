@@ -6,7 +6,7 @@ def Pool(x):
     y = np.zeros((int(xrow/2), int(xcol/2), numFilters))
     
     for k in range(numFilters):
-        filter = np.ones((2,2)) / (2*2)
+        filter = np.ones((2, 2)) / (2 * 2)
         image  = signal.convolve2d(x[:, :, k], filter, 'valid')
         
         y[:, :, k] = image[::2, ::2]
