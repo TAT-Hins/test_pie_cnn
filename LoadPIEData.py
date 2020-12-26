@@ -8,7 +8,7 @@ import numpy as np
 # Read input images and labels(0-9).
 # Return it as list of tuples.
 #
-def LoadPIEData(file):
+def LoadPIEData(file, labels_sort):
 
     data = sio.loadmat(file)
 
@@ -29,19 +29,32 @@ def LoadPIEData(file):
     if number_of_images != N:
         raise Exception('number of labels did not match the number of images')
 
-    # Get the data
-    x = zeros((N, rows, cols), dtype=float32)  # Initialize numpy array
-    y = zeros((N, 1), dtype=uint8)  # Initialize numpy array
+    # nums = np.zeros(labels_sort, int)
+    # for i in range(N):
+    #     nums[labels[i, 0]] += 1
+    # max = np.max(nums)
+
+    nums = [0] * labels_sort
     for i in range(N):
-        if i % 1000 == 0:
-            print("i: %i" % i)
+        nums[labels[i, 0] - 1] += 1
+    max_size = max(nums)
 
-        for row in range(rows):
-            for col in range(cols):
-                idx = row * cols + col
-                x[i][row][col] = images[i, idx]
+    # Get the data
+    x = zeros((labels_sort, max_size, rows, cols), dtype=float32)  # Initialize numpy array
+    y = zeros((labels_sort, max_size), dtype=uint8)  # Initialize numpy array
 
-        y[i] = labels[i, 0]
+    gb_idx = 0
+    for l in range(labels_sort):
+        for i in range(nums[l]):
+            if gb_idx % 1000 == 0:
+                print("i: %i" % gb_idx)
 
-    return (x, y)
-    return number_of_images
+            for row in range(rows):
+                for col in range(cols):
+                    x[l][i][row][col] = images[gb_idx, row * cols + col]
+
+            test = labels[gb_idx, 0]
+            y[l][i] = test
+            gb_idx += 1
+
+    return (x, y, max_size)
