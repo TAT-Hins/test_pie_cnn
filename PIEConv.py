@@ -14,19 +14,22 @@ def PIEConv(W1, W5, Wo, X, D, labels_sort, filter_num):
     momentum5 = np.zeros_like(W5)
     momentumo = np.zeros_like(Wo)
 
-    for lb in range(labels_sort):
-        # Labels's amount
-        N = D[lb].shape[0]
+    N = len(D)
 
+    bsize = 100
+    blist = np.arange(0, N, bsize)
+
+    for batch in range(len(blist)):
         dW1 = np.zeros_like(W1)
         dW5 = np.zeros_like(W5)
         dWo = np.zeros_like(Wo)
 
-        # k within each group's data size
-        for k in range(N):
+        begin = blist[batch]
+
+        for k in range(begin, begin + bsize):
             # Forward pass = inference
             # Images[k]
-            x = X[lb, k, :, :]
+            x = X[k, :, :]
             y1 = Conv(x, W1)
             y2 = ReLU(y1)
             y3 = Pool(y2)
@@ -38,7 +41,7 @@ def PIEConv(W1, W5, Wo, X, D, labels_sort, filter_num):
 
             # one-hot encoding
             d = np.zeros((labels_sort, 1))  # 68: 分类总数量
-            d[D[lb][k] - 1][0] = 1
+            d[D[k][0]][0] = 1
 
             # Backpropagation
             e = d - y
@@ -66,9 +69,9 @@ def PIEConv(W1, W5, Wo, X, D, labels_sort, filter_num):
             dW5 = dW5 + np.matmul(delta5, y4.T)
             dWo = dWo + np.matmul(delta, y5.T)
 
-        dW1 = dW1 / N
-        dW5 = dW5 / N
-        dWo = dWo / N
+        dW1 = dW1 / bsize
+        dW5 = dW5 / bsize
+        dWo = dWo / bsize
 
         momentum1 = alpha * dW1 + beta * momentum1
         W1 = W1 + momentum1
